@@ -16,8 +16,8 @@ class UserController extends Controller
         {
             try{
                 $validated= $request->validate([
-                    'name' => 'required|string|min:3|max:20',
-                    'email' => 'required|unique:users|email',
+                    'name' => 'required|string|max:50',
+                    'email' => 'required|string|unique:users|email',
                     'password' => 'required|string|min:8',
                 ]);
 
@@ -27,12 +27,11 @@ class UserController extends Controller
                     'password' => Hash::make($validated['password'])
                 ]);
 
-           $token = $user->createToken('auth_token')->plainTextToken;
-
                     return response()->json ([
-                    "status"=>"true",
-                    "message"=> "User created succesfully",
-                    "user"=>$user
+                        "id"=>$user->id,
+                        "name"=>$user->name,
+                        "email"=>$user->email,
+                        "created_at"=> $user->created_at,       
                     ],201);
             }
             catch (ValidationException $e){
@@ -52,24 +51,21 @@ class UserController extends Controller
     {
         try {
             $validated = $request->validate([
-                'email' => 'required|email',
+                'email' => 'required|string|email',
                 'password' => 'required',
             ]);
             
             $user = User::where('email', $validated['email'])->first();
 
             if (! $user || ! Hash::check($validated['password'], $user->password)) {
-                throw ValidationException::withMessages([
-                    'email' => ['Invalid credentials.'],
-                ]);
+                return response()->json(["Invalid credentials"], 401);
             }
+
             $token = $user->createToken('auth_token')->plainTextToken;
 
             return response()->json([
-                'status'=> "success",
-                'message'=> "Connected",
-                'user' => $user,
-                'token' => $token
+                'token' => $token,
+                'user_id' => $user->id
             ]);
         }
         catch (ValidationException $e){
